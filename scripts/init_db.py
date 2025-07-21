@@ -57,14 +57,14 @@ def reset_database():
     print("Resetting Judge0 database...")
     
     try:
-        from shared.database import Base
+        from shared.database import Base, create_tables
         
         # Drop all tables
         Base.metadata.drop_all(bind=engine)
         print("✓ Dropped existing tables")
         
         # Recreate tables
-        Base.metadata.create_all(bind=engine)
+        create_tables()
         print("✓ Recreated tables")
         
         print("Database reset completed successfully!")
