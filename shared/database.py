@@ -64,7 +64,6 @@ def get_db():
     finally:
         db.close()
 
-
 def create_tables() -> None:
     """Create all tables in the configured database."""
     Base.metadata.create_all(bind=engine)
