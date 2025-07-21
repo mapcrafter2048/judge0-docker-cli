@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     api_host: str = Field(default="0.0.0.0", description="API host")
     api_port: int = Field(default=8080, description="API port")
     debug: bool = Field(default=False, description="Debug mode")
+    redis_url: str = Field('redis://localhost:6379/0', description='Redis connection URL')
     
     # Worker settings
     max_workers: int = Field(default=4, description="Maximum number of workers")
