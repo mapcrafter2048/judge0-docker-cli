@@ -1,47 +1,75 @@
-#!/usr/bin/env python3
+"""Worker main module for Judge0 Docker CLI."""
 
+import asyncio
+import signal
 import sys
-import os
-from rq import Queue, Connection, SimpleWorker
-import redis
+from typing import Dict, Any
 
-# Add the parent directory to the path so we can import shared modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+from shared.utils import get_logger
 from shared.config import settings
-from shared.utils import setup_logging, get_logger
+from .executor import CodeExecutor
 
-# Setup logging
-setup_logging(settings.log_level)
 logger = get_logger(__name__)
 
 
-def main():
-    """Main worker process"""
+class WorkerManager:
+    """Manages worker processes for code execution."""
+    
+    def __init__(self):
+        self.executor = CodeExecutor()
+        self.running = False
+    
+    async def start(self):
+        """Start the worker manager."""
+        logger.info("Starting Worker Manager...")
+        self.running = True
+        
+        # Set up signal handlers
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+        
+        logger.info(f"Worker Manager started with max {settings.max_workers} workers")
+        
+        try:
+            while self.running:
+                await asyncio.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("Received interrupt signal")
+        finally:
+            await self.stop()
+    
+    async def stop(self):
+        """Stop the worker manager."""
+        logger.info("Stopping Worker Manager...")
+        self.running = False
+        logger.info("Worker Manager stopped")
+    
+    def _signal_handler(self, signum, frame):
+        """Handle shutdown signals."""
+        logger.info(f"Received signal {signum}")
+        self.running = False
+    
+    async def execute_job(self, job_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a single job."""
+        try:
+            return await asyncio.to_thread(self.executor.execute_code, job_data)
+        except Exception as e:
+            logger.error(f"Job execution failed: {e}")
+            raise
+
+
+async def main():
+    """Main worker entry point."""
+    logger.info("Judge0 Worker starting...")
+    
+    worker_manager = WorkerManager()
+    
     try:
-        # Connect to Redis
-        redis_conn = redis.from_url(settings.redis_url)
-        
-        # Create queue
-        queue = Queue('execution', connection=redis_conn)
-        
-        logger.info("Starting Judge0 worker...")
-        logger.info(f"Connected to Redis at {settings.redis_url}")
-        
-        # Start worker - use SimpleWorker for Windows compatibility
-        with Connection(redis_conn):
-            # Use SimpleWorker which doesn't fork and works on Windows
-            worker = SimpleWorker([queue], name=f'judge0-worker-{os.getpid()}')
-            logger.info(f"Worker {worker.name} started successfully")
-            worker.work()
-            
-    except KeyboardInterrupt:
-        logger.info("Worker stopped by user")
-        sys.exit(0)
+        await worker_manager.start()
     except Exception as e:
-        logger.error(f"Worker failed to start: {e}")
+        logger.error(f"Worker error: {e}")
         sys.exit(1)
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    asyncio.run(main())

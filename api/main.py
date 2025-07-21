@@ -13,11 +13,12 @@ from shared.models import (
     JobStatus,
     ExecutionResult
 )
-from shared.database import get_db, Job, create_tables
+from shared.database import get_db, Job, Base, engine
 from shared.background_executor import background_executor
-from shared.utils import setup_logging, get_logger
-from shared.config import settings# Setup logging
-setup_logging(settings.log_level)
+from shared.utils import get_logger
+from shared.config import settings
+
+# Setup logging
 logger = get_logger(__name__)
 
 
@@ -25,7 +26,7 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan context manager"""
     # Startup
-    create_tables()
+    Base.metadata.create_all(bind=engine)
     logger.info("Judge0 API started successfully")
     yield
     # Shutdown
@@ -35,7 +36,7 @@ async def lifespan(app: FastAPI):
 # Create FastAPI app
 app = FastAPI(
     title="Judge0 API",
-    description="Containerized Online Judge System",
+    description="Containerized Online Judge System with Docker CLI",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -56,7 +57,8 @@ async def root():
     return {
         "service": "Judge0 API",
         "status": "healthy",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "description": "Superior Docker CLI Multi-Worker Online Judge"
     }
 
 
@@ -85,7 +87,8 @@ async def health_check():
         "service": "Judge0 API",
         "database": db_status,
         "background_executor": executor_status,
-        "overall_status": "healthy" if overall_healthy else "unhealthy"
+        "overall_status": "healthy" if overall_healthy else "unhealthy",
+        "max_workers": settings.max_workers
     }
 
 
@@ -150,8 +153,8 @@ async def get_job_status(job_id: str, db: Session = Depends(get_db)):
                 stdout=job.stdout,
                 stderr=job.stderr,
                 exit_code=job.exit_code,
-                execution_time_ms=job.execution_time_ms,
-                memory_usage_kb=job.memory_usage_kb,
+                execution_time_ms=job.execution_time,
+                memory_usage_kb=job.memory_usage,
                 compile_output=job.compile_output
             )
         
@@ -192,8 +195,21 @@ async def list_jobs(
         jobs = (query.order_by(Job.created_at.desc())
                 .offset(offset).limit(limit).all())
         
+        # Convert jobs to dict
+        job_list = []
+        for job in jobs:
+            job_dict = {
+                "job_id": job.id,
+                "status": job.status,
+                "language": job.language,
+                "created_at": job.created_at.isoformat() if job.created_at else None,
+                "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+                "execution_time": job.execution_time
+            }
+            job_list.append(job_dict)
+        
         return {
-            "jobs": [job.to_dict() for job in jobs],
+            "jobs": job_list,
             "total": query.count(),
             "limit": limit,
             "offset": offset
@@ -229,5 +245,5 @@ if __name__ == "__main__":
         "api.main:app",
         host=settings.api_host,
         port=settings.api_port,
-        reload=True
+        reload=settings.debug
     )
