@@ -63,8 +63,8 @@ A high-performance online judge platform featuring **superior Docker CLI integra
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/mapcrafter2048/judge0-docker-cli-superior.git
-   cd judge0-docker-cli-superior
+   git clone https://github.com/mapcrafter2048/judge0-docker-cli.git
+   cd judge0-docker-cli
    ```
 
 2. **Setup environment**:
@@ -100,7 +100,7 @@ python fast_queue_test.py
 ## 📁 Project Structure
 
 ```
-judge0-docker-cli-superior/
+judge0-docker-cli/
 ├── api/                    # FastAPI REST API
 │   ├── __init__.py        # Package initialization
 │   └── main.py            # API endpoints and server
