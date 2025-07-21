@@ -164,6 +164,8 @@ temp/
 .dockerignore
 Dockerfile.dev
 
+# Test files
+# (included in repository)
 # Test files (development only)
 # Uncomment the lines below to exclude tests from version control.
 # test_*.py
