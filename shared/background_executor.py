@@ -109,8 +109,8 @@ class BackgroundCodeExecutor:
                 job.stdout = result.get('stdout', '')
                 job.stderr = result.get('stderr', '')
                 job.exit_code = result.get('exit_code', 0)
-                job.execution_time_ms = result.get('execution_time_ms', 0)
-                job.memory_usage_kb = result.get('memory_usage_kb', 0)
+                job.execution_time = int(result.get('execution_time', 0) * 1000)  # Convert to ms
+                job.memory_usage = result.get('memory_usage', 0)
                 job.compile_output = result.get('compile_output', '')
                 db.commit()
                 logger.debug(f"Updated job {job_id} with results")
