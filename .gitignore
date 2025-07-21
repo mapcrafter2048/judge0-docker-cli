@@ -165,9 +165,10 @@ temp/
 Dockerfile.dev
 
 # Test files (development only)
-test_*.py
-*_test.py
-tests/
+# Uncomment the lines below to exclude tests from version control.
+# test_*.py
+# *_test.py
+# tests/
 
 # Coverage reports
 .coverage
