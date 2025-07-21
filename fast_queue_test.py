@@ -13,8 +13,11 @@ from typing import Dict, List, Optional
 import uuid
 from datetime import datetime
 from dataclasses import dataclass
+from sqlalchemy.orm import Session
 
 from worker.executor import CodeExecutor
+from shared.database import get_db, Job
+from shared.models import LanguageEnum, JobStatus
 
 
 @dataclass
@@ -43,14 +46,17 @@ class FastQueueTest:
         self.start_time = None
         
     def create_fast_jobs(self, num_jobs: int = 30) -> List[Dict]:
-        """Create fast-completing jobs for reliable testing"""
+        """Create fast-completing jobs for reliable testing and save to database"""
         jobs = []
         
-        # Fast Python jobs (1-3 seconds each)
-        for i in range(num_jobs // 3):
-            job = {
-                'job_id': str(uuid.uuid4()),
-                'source_code': f'''
+        # Get database session
+        db = next(get_db())
+        
+        try:
+            # Fast Python jobs (1-3 seconds each)
+            for i in range(num_jobs // 3):
+                job_id = str(uuid.uuid4())
+                source_code = f'''
 import time
 start = time.time()
 total = 0
@@ -64,19 +70,32 @@ end = time.time()
 print(f"Fast Job {i+1}: {{total}} operations")
 print(f"Time: {{end-start:.3f}} seconds")
 print(f"Rate: {{({(i+1)*50000})/(end-start):.0f}} ops/sec")
-                ''',
-                'language': 'python3',
-                'category': 'fast',
-                'expected_ops': (i+1)*50000,
-                'queue_time': 0
-            }
-            jobs.append(job)
-        
-        # Medium Python jobs (2-5 seconds each)
-        for i in range(num_jobs // 3):
-            job = {
-                'job_id': str(uuid.uuid4()),
-                'source_code': f'''
+                '''
+                
+                # Create database record
+                db_job = Job(
+                    id=job_id,
+                    source_code=source_code.strip(),
+                    language=LanguageEnum.PYTHON3,
+                    status=JobStatus.PENDING
+                )
+                db.add(db_job)
+                
+                # Create job dict for queue
+                job = {
+                    'job_id': job_id,
+                    'source_code': source_code.strip(),
+                    'language': 'python3',
+                    'category': 'fast',
+                    'expected_ops': (i+1)*50000,
+                    'queue_time': 0
+                }
+                jobs.append(job)
+            
+            # Medium Python jobs (2-5 seconds each)
+            for i in range(num_jobs // 3):
+                job_id = str(uuid.uuid4())
+                source_code = f'''
 import time
 start = time.time()
 result = 0
@@ -90,21 +109,34 @@ for n in range({(i+1)*10000}):
 
 end = time.time()
 print(f"Medium Job {i+1}: {{result}} result")
-print(f"Time: {{end-start:.3f}} seconds") 
+print(f"Time: {{end-start:.3f}} seconds")
 print(f"Rate: {{({(i+1)*100000})/(end-start):.0f}} ops/sec")
-                ''',
-                'language': 'python3',
-                'category': 'medium',
-                'expected_ops': (i+1)*100000,
-                'queue_time': 0
-            }
-            jobs.append(job)
-        
-        # Java jobs (3-6 seconds each)
-        for i in range(num_jobs - len(jobs)):
-            job = {
-                'job_id': str(uuid.uuid4()),
-                'source_code': f'''
+                '''
+                
+                # Create database record
+                db_job = Job(
+                    id=job_id,
+                    source_code=source_code.strip(),
+                    language=LanguageEnum.PYTHON3,
+                    status=JobStatus.PENDING
+                )
+                db.add(db_job)
+                
+                # Create job dict for queue
+                job = {
+                    'job_id': job_id,
+                    'source_code': source_code.strip(),
+                    'language': 'python3',
+                    'category': 'medium',
+                    'expected_ops': (i+1)*100000,
+                    'queue_time': 0
+                }
+                jobs.append(job)
+            
+            # Java jobs (3-6 seconds each)
+            for i in range(num_jobs - len(jobs)):
+                job_id = str(uuid.uuid4())
+                source_code = f'''
 public class Solution {{
     public static void main(String[] args) {{
         long start = System.currentTimeMillis();
@@ -127,13 +159,38 @@ public class Solution {{
         System.out.println("Rate: " + (ops * 1000L / (end-start)) + " ops/sec");
     }}
 }}
-                ''',
-                'language': 'java',
-                'category': 'java',
-                'expected_ops': (i+1)*200000,
-                'queue_time': 0
-            }
-            jobs.append(job)
+                '''
+                
+                # Create database record
+                db_job = Job(
+                    id=job_id,
+                    source_code=source_code.strip(),
+                    language=LanguageEnum.JAVA,
+                    status=JobStatus.PENDING
+                )
+                db.add(db_job)
+                
+                # Create job dict for queue
+                job = {
+                    'job_id': job_id,
+                    'source_code': source_code.strip(),
+                    'language': 'java',
+                    'category': 'java',
+                    'expected_ops': (i+1)*200000,
+                    'queue_time': 0
+                }
+                jobs.append(job)
+            
+            # Commit all jobs to database
+            db.commit()
+            print(f"✅ Created {len(jobs)} jobs in database")
+            
+        except Exception as e:
+            print(f"❌ Error creating jobs in database: {e}")
+            db.rollback()
+            raise
+        finally:
+            db.close()
         
         return jobs
     

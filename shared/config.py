@@ -23,7 +23,11 @@ class Settings(BaseSettings):
     
     # Worker settings
     max_workers: int = Field(default=4, description="Maximum number of workers")
+    workers_count: int = Field(default=4, description="Number of worker processes")
     worker_timeout: int = Field(default=300, description="Worker timeout in seconds")
+    
+    # Logging settings
+    log_level: str = Field(default="INFO", description="Logging level")
     
     # Container limits
     max_memory_mb: int = Field(default=512, description="Maximum memory per container in MB")
