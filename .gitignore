@@ -171,7 +171,6 @@ Dockerfile.dev
 # test_*.py
 # *_test.py
 # tests/
-
 # Coverage reports
 .coverage
 htmlcov/

@@ -1,13 +1,13 @@
 import os
-from fastapi.testclient import TestClient
 from datetime import datetime
+from fastapi.testclient import TestClient
 
 # Set up test database before importing app
-os.environ["DATABASE_URL"] = "sqlite:///./test.db"
+os.environ["DATABASE_URL"] = "sqlite:///./test.db"  # noqa: E402
 
-from api.main import app
-from shared.database import Base, engine, SessionLocal
-from shared.models import Job, JobStatus
+from api.main import app  # noqa: E402
+from shared.database import Base, engine, SessionLocal, Job  # noqa: E402
+from shared.models import JobStatus  # noqa: E402
 
 # Ensure tables exist
 Base.metadata.create_all(bind=engine)
@@ -49,10 +49,16 @@ def test_submit_and_retrieve(monkeypatch):
         db.close()
 
     monkeypatch.setattr(
-        "shared.background_executor.background_executor.execute_code_job", fake_execute
+        "shared.background_executor.background_executor.execute_code_job",
+        fake_execute,
     )
 
-    payload = {"source_code": "print('Hello')", "language": "python3", "stdin": ""}
+    payload = {
+        "source_code": "print('Hello')",
+        "language": "python3",
+        "stdin": "",
+    }
+
     resp = client.post("/submissions", json=payload)
     assert resp.status_code == 200
     job_id = resp.json()["job_id"]
