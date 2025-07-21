@@ -58,6 +58,7 @@ def test_submit_and_retrieve(monkeypatch):
         "language": "python3",
         "stdin": "",
     }
+
     resp = client.post("/submissions", json=payload)
     assert resp.status_code == 200
     job_id = resp.json()["job_id"]

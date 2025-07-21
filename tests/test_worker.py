@@ -1,6 +1,5 @@
 from worker.executor import CodeExecutor
 
-
 def test_execute_code(monkeypatch):
     executor = CodeExecutor()
 

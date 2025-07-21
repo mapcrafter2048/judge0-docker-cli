@@ -17,3 +17,5 @@ pytest==8.2.2
 black==23.10.0
 flake8==6.1.0
 httpx<0.25
+redis==5.0.1
+rq==1.16.1
