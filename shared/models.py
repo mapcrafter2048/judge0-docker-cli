@@ -20,13 +20,13 @@ class LanguageEnum(str, Enum):
 
 
 class JobStatus(str, Enum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    TIMEOUT = "timeout"
-    COMPILATION_ERROR = "compilation_error"
-    RUNTIME_ERROR = "runtime_error"
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    TIMEOUT = "TIMEOUT"
+    COMPILATION_ERROR = "COMPILATION_ERROR"
+    RUNTIME_ERROR = "RUNTIME_ERROR"
 
 
 class SubmissionRequest(BaseModel):
